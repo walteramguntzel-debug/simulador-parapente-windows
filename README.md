@@ -1,5 +1,7 @@
 # Simulador Parapente Brasil — Windows
 
+![Downloads](https://img.shields.io/github/downloads/walteramguntzel-debug/simulador-parapente-windows/total?label=downloads&color=e9822a)
+
 Voe de parapente no computador **pilotando com o próprio corpo**: a câmera do PC lê a sua cabeça e as suas mãos.
 
 ## ⬇️ Baixar
