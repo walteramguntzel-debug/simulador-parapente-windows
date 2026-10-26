@@ -6,6 +6,8 @@ Voe de parapente no computador **pilotando com o próprio corpo**: a câmera do 
 
 **[Baixar para Windows (zip, 67 MB)](https://github.com/walteramguntzel-debug/simulador-parapente-windows/releases/latest/download/SimuladorParapenteBrasil-Windows.zip)**
 
+🎬 [Veja o vídeo de como usar](https://youtu.be/V2yuG4ub_oM)
+
 📘 [Manual dos comandos pela câmera (PDF)](https://github.com/walteramguntzel-debug/simulador-parapente-windows/releases/latest/download/Manual-comandos-pela-camera.pdf)
 
 ## Como instalar
