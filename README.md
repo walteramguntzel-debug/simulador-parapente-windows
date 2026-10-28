@@ -1,4 +1,4 @@
-# Simulador Parapente Brasil — Windows
+# Simulador Parapente Brasil — Windows e Mac
 
 ![Downloads](https://img.shields.io/github/downloads/walteramguntzel-debug/simulador-parapente-windows/total?label=downloads&color=e9822a)
 
@@ -8,11 +8,13 @@ Voe de parapente no computador **pilotando com o próprio corpo**: a câmera do 
 
 **[Baixar para Windows (zip, 67 MB)](https://github.com/walteramguntzel-debug/simulador-parapente-windows/releases/latest/download/SimuladorParapenteBrasil-Windows.zip)**
 
+**[Baixar para Mac (zip, 77 MB)](https://github.com/walteramguntzel-debug/simulador-parapente-windows/releases/latest/download/SimuladorParapenteBrasil-Mac.zip)** — Mac com chip Apple (M1 a M4) ou Intel
+
 🎬 [Veja o vídeo de como usar](https://youtu.be/ItbrtvhFMdg)
 
 📘 [Manual dos comandos pela câmera (PDF)](https://github.com/walteramguntzel-debug/simulador-parapente-windows/releases/latest/download/Manual-comandos-pela-camera.pdf)
 
-## Como instalar
+## Como instalar no Windows
 
 1. Baixe o zip acima.
 2. Clique com o botão direito no arquivo → **Extrair tudo…**
@@ -22,6 +24,18 @@ Não precisa instalar nada. Se o Windows mostrar *"O Windows protegeu o computad
 (o aviso aparece em todo programa novo que ainda não tem muitos downloads).
 
 **Precisa de:** Windows 10 ou 11 (64 bits). A câmera é opcional — sem ela, você voa pelo teclado.
+
+## Como instalar no Mac
+
+1. Baixe o zip do Mac (o Safari já abre o zip sozinho; senão, dê dois cliques nele).
+2. Arraste **Simulador Parapente Brasil** para a pasta **Aplicativos**.
+3. Abra o app. Na primeira vez, o Mac pergunta se ele pode usar a **câmera**: aperte **Permitir** (é ela que lê a sua
+   cabeça e as suas mãos). O **microfone** só é pedido se você usar o rádio (tecla T).
+
+O app é assinado e verificado pela Apple. Se você negou a câmera sem querer: **Ajustes do Sistema → Privacidade e
+Segurança → Câmera** → ligue o Simulador Parapente Brasil.
+
+**Precisa de:** macOS 12 ou mais novo.
 
 ## Como pilotar
 
