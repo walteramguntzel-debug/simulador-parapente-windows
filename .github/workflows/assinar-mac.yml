@@ -26,6 +26,8 @@ permissions:
 jobs:
   assinar:
     runs-on: macos-latest
+    # A 1ª notarização de um certificado novo levou mais de 1 h (28/10/2026); as seguintes costumam levar minutos.
+    timeout-minutes: 300
     env:
       GH_TOKEN: ${{ github.token }}
       APP: "Simulador Parapente Brasil.app"
@@ -89,7 +91,7 @@ jobs:
         run: |
           echo "$P8" > chave.p8
           ditto -c -k --keepParent "app/$APP" envio.zip
-          xcrun notarytool submit envio.zip --key chave.p8 --key-id "$KID" --issuer "$ISS" --wait --timeout 60m | tee notario.txt
+          xcrun notarytool submit envio.zip --key chave.p8 --key-id "$KID" --issuer "$ISS" --wait --timeout 4h | tee notario.txt
           grep -q "status: Accepted" notario.txt || {
             SID=$(grep -m1 "id:" notario.txt | awk '{print $2}')
             xcrun notarytool log "$SID" --key chave.p8 --key-id "$KID" --issuer "$ISS"; exit 1; }
