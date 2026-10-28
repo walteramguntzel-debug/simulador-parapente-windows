@@ -1,0 +1,108 @@
+# Assina, autentica na Apple (notarização) e publica o Simulador para MAC.
+# Fonte: JOGO_PARAPENTE/_build/mac/assinar-mac.yml (repositório privado). Copiado para
+# .github/workflows/ do repositório PÚBLICO simulador-parapente-windows, onde o Mac do GitHub é grátis.
+#
+# Por que na nuvem: o .app sai do Unity no Windows, mas codesign/notarytool/stapler só existem no macOS.
+# Mac sem notarização = "não é possível abrir porque a Apple não pode verificar" para quem baixa.
+#
+# Entrada: o zip SEM assinatura (unity.ps1 Mac + empacotar_mac.py) anexado à release <tag> com o nome
+# SimuladorParapenteBrasil-Mac-sem-assinatura.zip. Saída: SimuladorParapenteBrasil-Mac.zip na mesma release
+# (e o "sem assinatura" é apagado).
+#
+# Segredos do repositório: DEVID_P12_BASE64, DEVID_P12_SENHA (certificado Developer ID Application),
+# ASC_KEY_P8, ASC_KEY_ID, ASC_ISSUER (chave da App Store Connect API, para o notarytool).
+name: Assinar Mac
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release onde está o zip sem assinatura (ex.: v1.2)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  assinar:
+    runs-on: macos-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      APP: "Simulador Parapente Brasil.app"
+    steps:
+      - name: Baixar o zip sem assinatura
+        run: |
+          gh release download "${{ inputs.tag }}" --repo "${{ github.repository }}" \
+            --pattern "SimuladorParapenteBrasil-Mac-sem-assinatura.zip" --dir entrada
+          mkdir app && ditto -x -k entrada/SimuladorParapenteBrasil-Mac-sem-assinatura.zip app
+          # O zip vem do Windows: devolver o "executável" aos binários.
+          chmod +x "app/$APP/Contents/MacOS/"*
+          xattr -cr "app/$APP"
+          ls "app/$APP/Contents/MacOS/"
+
+      - name: Entitlements
+        run: |
+          cat > parapente.entitlements <<'EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+          <key>com.apple.security.cs.allow-jit</key><true/>
+          <key>com.apple.security.cs.allow-unsigned-executable-memory</key><true/>
+          <key>com.apple.security.cs.disable-library-validation</key><true/>
+          <key>com.apple.security.device.camera</key><true/>
+          <key>com.apple.security.device.audio-input</key><true/>
+          </dict></plist>
+          EOF
+          plutil -lint parapente.entitlements
+
+      - name: Certificado num chaveiro temporário
+        env:
+          P12: ${{ secrets.DEVID_P12_BASE64 }}
+          SENHA: ${{ secrets.DEVID_P12_SENHA }}
+        run: |
+          echo "$P12" | base64 --decode > devid.p12
+          security create-keychain -p tmp tmp.keychain
+          security set-keychain-settings -lut 3600 tmp.keychain
+          security unlock-keychain -p tmp tmp.keychain
+          security import devid.p12 -k tmp.keychain -P "$SENHA" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k tmp tmp.keychain
+          security list-keychains -d user -s tmp.keychain $(security list-keychains -d user | tr -d '"')
+          rm devid.p12
+          security find-identity -v -p codesigning tmp.keychain
+
+      - name: Assinar (de dentro para fora)
+        run: |
+          ID=$(security find-identity -v -p codesigning tmp.keychain | grep "Developer ID Application" | head -1 | awk '{print $2}')
+          A="app/$APP"
+          # Bibliotecas e bundles internos primeiro, sem entitlements; o app por último, com eles.
+          find "$A/Contents" -depth \( -name "*.dylib" -o -name "*.so" -o -name "*.bundle" -o -name "*.framework" \) -print0 |
+            xargs -0 -I{} codesign --force --timestamp --options runtime --sign "$ID" "{}"
+          codesign --force --timestamp --options runtime --entitlements parapente.entitlements --sign "$ID" "$A"
+          codesign --verify --deep --strict --verbose=2 "$A"
+          codesign -d --entitlements - "$A"
+
+      - name: Notarizar e grampear
+        env:
+          P8: ${{ secrets.ASC_KEY_P8 }}
+          KID: ${{ secrets.ASC_KEY_ID }}
+          ISS: ${{ secrets.ASC_ISSUER }}
+        run: |
+          echo "$P8" > chave.p8
+          ditto -c -k --keepParent "app/$APP" envio.zip
+          xcrun notarytool submit envio.zip --key chave.p8 --key-id "$KID" --issuer "$ISS" --wait --timeout 60m | tee notario.txt
+          grep -q "status: Accepted" notario.txt || {
+            SID=$(grep -m1 "id:" notario.txt | awk '{print $2}')
+            xcrun notarytool log "$SID" --key chave.p8 --key-id "$KID" --issuer "$ISS"; exit 1; }
+          rm chave.p8
+          xcrun stapler staple "app/$APP"
+          spctl -a -vvv -t exec "app/$APP"
+
+      - name: Publicar na release
+        run: |
+          ditto -c -k --keepParent "app/$APP" SimuladorParapenteBrasil-Mac.zip
+          gh release upload "${{ inputs.tag }}" SimuladorParapenteBrasil-Mac.zip --clobber --repo "${{ github.repository }}"
+          gh release delete-asset "${{ inputs.tag }}" SimuladorParapenteBrasil-Mac-sem-assinatura.zip --yes --repo "${{ github.repository }}"
+
+      - name: Limpar o chaveiro
+        if: always()
+        run: security delete-keychain tmp.keychain || true
